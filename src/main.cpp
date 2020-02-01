@@ -9,6 +9,53 @@
 void initialize() {
 	//Sets the arm motors to hold position when not powered.
 	arms.setBrakeMode(AbstractMotor::brakeMode::hold);
+	pros::lcd::initialize();
+}
+
+int selectedAuton = AUTON_RED;
+bool auton_far = false;
+bool auton_delay_switch = false;
+bool auton_floor = true;
+bool op_control = false;
+
+void set_auton(int auton){
+  pros::lcd::clear_line(7);
+  if(auton == AUTON_RED){
+    selectedAuton = auton;
+    pros::lcd::print(7, "AUTON RED");
+  }
+  else if(auton == AUTON_BLUE){
+    selectedAuton = auton;
+    pros::lcd::print(7, "AUTON BLUE");
+  }
+  else
+    selectedAuton = AUTON_NONE;
+		pros::lcd::print(7, "UH OH, NO AUTON???");
+}
+
+void on_center_button() {
+	static bool center_pressed = false;
+	center_pressed = !center_pressed;
+	if (center_pressed && op_control) {
+		pros::delay(1000);
+		autonomous();
+	}
+}
+
+void on_left_button(){
+	static bool left_pressed = false;
+	left_pressed = !left_pressed;
+	if(left_pressed){
+		  set_auton(AUTON_RED);
+	}
+}
+
+void on_right_button(){
+	static bool right_pressed = false;
+	right_pressed = !right_pressed;
+	if(right_pressed){
+		set_auton(AUTON_BLUE);
+	}
 }
 
 /**
@@ -41,13 +88,39 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
+	// Used for testing in op controller
+	bool was_op_control = op_control;
+	op_control = false;
+
+	// WHEN ADDING A TURN, ADD IT HERE FOR AUTON RED
+	// WILL BE REVERSED FOR BLUE
+	// ONLY NEED TO WRITE AUTON ONCE FOR MAX SPEEEEED
+	int turns[]{
+		0 //FIRST TURN EXAMPLE
+	};
+	// FLIP TURNS FOR BLUE SIDE
+	if(selectedAuton == AUTON_BLUE){
+		for(int i = 0; i < std::size(turns); i++){
+			turns[i] = -turns[i];
+		}
+	}
+	// NOTE: USE TURNS LIKE SO:
+	// chassis.turnAngle(turns[0]);
+
+
+
+	/******* AUTON START *******/
+	
 	chassis.moveDistance(-360);
 	pros::delay(2000);
 	chassis.moveDistance(360);
 	pros::delay(2000);
 
-	autonRed();
-	// autonBlue();
+	/******* AUTON END *******/
+
+
+
+	op_control = was_op_control;
 }
 
 /**
@@ -64,6 +137,7 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
+	op_control = true;
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 
 	//Toggle for drive speed. Declared outside while loop so value is not reset.
@@ -71,9 +145,12 @@ void opcontrol() {
 	bool toggleArm		= false;
 	bool armsOn				= false;
 
-	flipper.moveAbsolute(130, 200);
+	int maxVelocity = 0;
+
+	//flipper.moveAbsolute(130, 200);
 
 	while (true) {
+		if(op_control){
 		//If the button is pressed, it toggles the value. Using new_press so it is only toggled once per press.
 		if (master.get_digital_new_press(DIGITAL_DOWN)) {
 			toggleSpeed = true;
@@ -116,11 +193,31 @@ void opcontrol() {
 
 		//Raises or lowers the lift depending on the button pushed.
 		if (master.get_digital(DIGITAL_L1)) {
-			lift.moveAbsolute(140, 20);
-		} else if (master.get_digital(DIGITAL_L2)) {
-			lift.moveAbsolute(0, 20);
-		}
+			// lift.moveAbsolute(140, 20);
+			double pos = lift.getPosition();
+			double vel = lift.getActualVelocity();
+			// pros::lcd::print(3, "Velocity: %f", curVelocity);
+			if(pos > 120){
+				lift.moveVelocity(0);
+			}
+			else if(vel > 50 || pos > 70){
+				lift.moveVelocity(10);
+				maxVelocity = vel;
+				pros::lcd::print(4, "Max Velocity: %d", maxVelocity);
+				pros::lcd::print(5, "Position: %f", pos);
+			}
+			else{
+				lift.moveVelocity(20);
+			}
 
+		} else if (master.get_digital(DIGITAL_L2)) {
+			// lift.moveAbsolute(0, 20);
+			lift.moveVelocity(-20);
+		}
+		else{
+			lift.moveVoltage(0);
+		}
+		}
 		pros::delay(20);
 	}
 }
