@@ -110,7 +110,7 @@ void autonomous() {
 
 
 	/******* AUTON START *******/
-	
+
 	chassis.moveDistance(-360);
 	pros::delay(2000);
 	chassis.moveDistance(360);
@@ -145,6 +145,8 @@ void opcontrol() {
 	bool toggleArm		= false;
 	bool armsOn				= false;
 
+	bool toggleHolder = false;
+
 	int maxVelocity = 0;
 
 	//flipper.moveAbsolute(130, 200);
@@ -164,17 +166,30 @@ void opcontrol() {
 		chassis.tank(master.get_analog(ANALOG_LEFT_Y)/127.0/(toggleSpeed ? 2 : 1),
 			master.get_analog(ANALOG_RIGHT_Y)/127.0/(toggleSpeed ? 2 : 1));
 
+
+		armsOn = false;
+		if (master.get_digital(DIGITAL_UP)) {
+			arms.moveVelocity(-50);
+			armsOn = true;
+		}
+		else if(master.get_digital(DIGITAL_DOWN)){
+			arms.moveVelocity(50);
+			armsOn = true;
+		}
+
 		//Runs the intake either in or out depending on the button pushed.
 		if (master.get_digital(DIGITAL_R1)) {
 			intake.moveVelocity(150);
-			arms.moveVelocity(-40);
-			armsOn = true;
+			if(!armsOn)
+				arms.moveVelocity(40);
 		} else if (master.get_digital(DIGITAL_R2)) {
 			intake.moveVelocity(-150);
-			armsOn = false;
+			if(!armsOn)
+				arms.moveVelocity(40);
 		} else {
 			intake.moveVelocity(0);
-			armsOn = false;
+			if(!armsOn)
+				arms.moveVelocity(0);
 		}
 
 		// //Moves arms in or out depending on the button pushed.
@@ -185,9 +200,10 @@ void opcontrol() {
 		// } else if (!armsOn) {
 		// 	arms.moveVelocity(0);
 		// }
-		if (master.get_digital_new_press(DIGITAL_A)) {
-			toggleArm = !toggleArm;
-			toggleArm ? arms.moveAbsolute(230, 50) : arms.moveAbsolute(0, 50);
+
+		if (master.get_digital_new_press(DIGITAL_A)){
+			toggleHolder = !toggleHolder;
+			toggleHolder ? holder.moveAbsolute(48, 50) : holder.moveAbsolute(0, 50);
 		}
 
 

@@ -28,6 +28,8 @@ MotorGroup lift({Motor(4, false, AbstractMotor::gearset::red), Motor(5, false, A
   Motor(6, true, AbstractMotor::gearset::red), Motor(7, true, AbstractMotor::gearset::red)}
 );
 
+Motor holder = Motor(19, false, AbstractMotor::gearset::red);
+
 /* Motor type information
  *
  * Red:   36:1  100 RPM

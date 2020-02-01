@@ -9,7 +9,7 @@ extern MotorGroup intake;
 extern MotorGroup arms;
 extern MotorGroup lift;
 
-extern Motor flipper;
+extern Motor holder;
 
 /** Auton Stuff **/
 #define AUTON_NONE  -1
